@@ -116,7 +116,7 @@ def get_meme_photo_images_data(meme_photo_images):
 
     def crawl_image_data(url):
         get_url(url)
-    urls = sum(meme_photo_images.values(), [])
+    urls = sum((list(x) for x in meme_photo_images.values()), [])
     batch_crawl(crawl_image_data, urls)
     return {}
 
