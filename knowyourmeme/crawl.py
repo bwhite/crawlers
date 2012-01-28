@@ -5,9 +5,19 @@ from pyquery import PyQuery
 import gevent
 import re
 import cPickle as pickle
+from shove import Shove
+import os
 
-
+DB = Shove('sqllite://%s' % (os.path.expanduser('~/crawl_cache.db')), compress=True)
 PAGE_RE = re.compile('.*\?page=([0-9]+)')
+
+
+def get_url(url):
+    try:
+        return DB[url]
+    except KeyError:
+        DB[url] = requests.get(url).content
+        return DB[url]
 
 
 def page_num(url):
@@ -16,7 +26,7 @@ def page_num(url):
 
 def get_num_pages():
     url = 'http://knowyourmeme.com/memes/'
-    content = requests.get(url).content
+    content = get_url(url)
     print(url)
     pq = PyQuery(content)
     return max([page_num(x.get('href')) for x in pq('a[href^="/memes?page="]')])
@@ -27,7 +37,7 @@ def get_meme_urls():
     meme_names = set()
 
     def crawl(url):
-        content = requests.get(url).content
+        content = get_url(url)
         print(url)
         if content.find('Whoops! There are') > 0:
             return
@@ -38,7 +48,7 @@ def get_meme_urls():
     return ['http://knowyourmeme.com%s' % x for x in meme_names]
 
 
-def batch_crawl(crawl_func, datas, num_connections=50):
+def batch_crawl(crawl_func, datas, num_connections=100):
     gs = []
     for data in datas:
         g = gevent.spawn(crawl_func, data)
@@ -54,7 +64,7 @@ def get_meme_photos(meme_urls):
     photo_pages = {}  # [meme_url] = set of photo page urls
 
     def crawl_index(url):
-        content = requests.get(url).content
+        content = get_url(url)
         pq = PyQuery(content)
         print(url)
         num_pages = max([page_num(x.get('href')) for x in pq('a[href*="/photos?page="]')] + [1])
@@ -62,7 +72,7 @@ def get_meme_photos(meme_urls):
 
     def crawl_photos(urls):
         parent_url, url = urls
-        content = requests.get(url).content
+        content = get_url(url)
         pq = PyQuery(content)
         photo_pages.setdefault(parent_url, set()).update(set('http://knowyourmeme.com' + x.get('href') for x in pq('a[class="photo cboxElement"]')))
 
@@ -76,7 +86,7 @@ def get_meme_photo_images(photo_page_urls):
 
     def crawl_photo_image(urls):
         parent_url, url = urls
-        content = requests.get(url).content
+        content = get_url(url)
         pq = PyQuery(content)
         print(url)
         images.setdefault(parent_url, set()).add(pq('img[class="centered_photo"]')[0].get('src'))
@@ -103,5 +113,6 @@ def main():
     meme_photos = try_pickle_run('meme_photos.pkl', lambda : get_meme_photos(meme_urls))
     meme_photos = dict(meme_photos.items()[:10])
     meme_photo_images = try_pickle_run('meme_photo_images.pkl', lambda : get_meme_photo_images(meme_photos))
+    DB.sync()
     
 main()
