@@ -52,7 +52,6 @@ def batch_crawl(crawl_func, datas):
 def get_meme_photos(meme_urls):
     meme_urls = list(meme_urls)
     photo_pages = {}  # [meme_url] = set of photo page urls
-    photos = {}  # Set of photo urls
 
     def crawl_index(url):
         content = requests.get(url).content
@@ -65,10 +64,23 @@ def get_meme_photos(meme_urls):
         parent_url, url = urls
         content = requests.get(url).content
         pq = PyQuery(content)
-        photo_pages[parent_url] = set(x.get('href') for x in pq('a[href^="/photos/"]'))
-        #photos[url] = set(x.get('href') for x in pq('a[href*="kym-cdn.com"]'))
-    #batch_crawl(crawl, meme_urls)
+        photo_pages.setdefault(parent_url, set()).update(set('http://knowyourmeme.com' + x.get('href') for x in pq('a[href^="/photos/"]')))
+
+    # This gets a list of all of the "photo pages"
     batch_crawl(crawl_index, [x + '/photos' for x in meme_urls])
+    return photo_pages
+
+
+def get_meme_photo_images(meme_urls, photo_page_urls):
+    photos = {}  # Set of photo urls
+    def crawl_photo_image(urls):
+        parent_url, url = urls
+        content = requests.get(url).content
+        pq = PyQuery(content)
+        print(url)
+        photos.setdefault(parent_url, set()).add(pq('img[class="centered_photo"]').get('src'))
+
+    batch_crawl()
     #http://knowyourmeme.com/memes/x-x-everywhere/photos?page=3
     
     return photos, photo_pages
