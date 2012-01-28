@@ -79,6 +79,7 @@ def get_meme_photo_images(photo_page_urls):
 
     def crawl_photo_image(urls):
         parent_url, url = urls
+        print(url)
         content = requests.get(url).content
         pq = PyQuery(content)
         print(url)
