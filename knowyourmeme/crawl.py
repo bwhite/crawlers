@@ -21,6 +21,7 @@ def get_url(url):
             DB[url] = requests.get(url).content
             return DB[url]
         else:
+            print('Url[%s] Gave Code[%d]' % (url, r.status_code))
             return r.content
 
 
@@ -117,8 +118,8 @@ def try_pickle_run(fn, func):
 def main():
     meme_urls = try_pickle_run('meme_urls.pkl', get_meme_urls)
     meme_photos = try_pickle_run('meme_photos.pkl', lambda : get_meme_photos(meme_urls))
-    meme_photos = dict(meme_photos.items()[:10])
-    meme_photo_images = try_pickle_run('meme_photo_images.pkl', lambda : get_meme_photo_images(meme_photos))
+    #meme_photos = dict(meme_photos.items()[:10])
+    #meme_photo_images = try_pickle_run('meme_photo_images.pkl', lambda : get_meme_photo_images(meme_photos))
     DB.sync()
     
 main()
