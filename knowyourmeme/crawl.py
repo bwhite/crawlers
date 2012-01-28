@@ -8,7 +8,7 @@ import cPickle as pickle
 from shove import Shove
 import os
 
-DB = Shove('sqllite://%s' % (os.path.expanduser('~/crawl_cache.db')), compress=True)
+DB = Shove('sqlite://%s' % (os.path.expanduser('~/crawl_cache.db')), compress=True)
 PAGE_RE = re.compile('.*\?page=([0-9]+)')
 
 
