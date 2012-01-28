@@ -71,19 +71,19 @@ def get_meme_photos(meme_urls):
     return photo_pages
 
 
-def get_meme_photo_images(meme_urls, photo_page_urls):
-    photos = {}  # Set of photo urls
+def get_meme_photo_images(photo_page_urls):
+    images = {}  # Set of photo urls
+
     def crawl_photo_image(urls):
         parent_url, url = urls
         content = requests.get(url).content
         pq = PyQuery(content)
         print(url)
-        photos.setdefault(parent_url, set()).add(pq('img[class="centered_photo"]').get('src'))
+        images.setdefault(parent_url, set()).add(pq('img[class="centered_photo"]').get('src'))
 
-    batch_crawl()
-    #http://knowyourmeme.com/memes/x-x-everywhere/photos?page=3
-    
-    return photos, photo_pages
+    url_pairs = sum([[(x, z) for z in y] for x, y in photo_page_urls.items()], [])
+    batch_crawl(crawl_photo_image, url_pairs)
+    return images
 
 
 def try_pickle_run(fn, func):
@@ -100,5 +100,6 @@ def try_pickle_run(fn, func):
 def main():
     meme_urls = try_pickle_run('meme_urls.pkl', get_meme_urls)
     meme_photos = try_pickle_run('meme_photos.pkl', lambda : get_meme_photos(meme_urls[:10]))
+    meme_photo_images = try_pickle_run('meme_photo_images.pkl', lambda : get_meme_photo_images(meme_photos))
     
 main()
