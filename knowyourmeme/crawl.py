@@ -38,7 +38,7 @@ def get_meme_urls():
     return ['http://knowyourmeme.com%s' % x for x in meme_names]
 
 
-def batch_crawl(crawl_func, datas, num_connections=20):
+def batch_crawl(crawl_func, datas, num_connections=50):
     gs = []
     for data in datas:
         g = gevent.spawn(crawl_func, data)
