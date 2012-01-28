@@ -69,7 +69,7 @@ def get_meme_photos(meme_urls):
     # This gets a list of all of the "photo pages"
     batch_crawl(crawl_index, [x + '/photos' for x in meme_urls])
     photo_pages = photo_pages.items()
-    remove = photo_pages[0].intersection(photo_pages[1])
+    remove = photo_pages[0][1].intersection(photo_pages[1][1])
     return dict((x, y - remove) for x, y in photo_pages)
 
 
