@@ -19,7 +19,7 @@ def get_url(url):
     except KeyError:
         r = requests.get(url)
         if r.status_code == 200:
-            DB[url] = requests.get(urllib.unquote(url)).content
+            DB[url] = requests.get(str(url)).content
             return DB[url]
         else:
             print('Url[%s] Gave Code[%d]' % (url, r.status_code))
