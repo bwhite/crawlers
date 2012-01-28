@@ -58,8 +58,8 @@ def get_meme_photos(meme_urls):
         content = requests.get(url).content
         pq = PyQuery(content)
         print(url)
-        num_pages = max(page_num(x.get('href')) for x in pq('a[href^="/memes/.*/photos\?page="]'))
-        batch_crawl(crawl_photos, ['%s?page%d' % x for x in range(1, num_pages + 1)])
+        num_pages = max([page_num(x.get('href')) for x in pq('a[href*="/photos?page="]')] + [1])
+        batch_crawl(crawl_photos, ['%s?page%d' % (url, x) for x in range(1, num_pages + 1)])
 
     def crawl_photos(url):
         content = requests.get(url).content
