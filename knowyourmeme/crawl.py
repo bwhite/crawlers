@@ -7,6 +7,7 @@ import re
 import cPickle as pickle
 from shove import Shove
 import os
+import random
 
 DB = Shove('sqlite:///%s' % (os.path.expanduser('~/crawl_cache.db')), compress=True)
 PAGE_RE = re.compile('.*\?page=([0-9]+)')
@@ -14,6 +15,8 @@ PAGE_RE = re.compile('.*\?page=([0-9]+)')
 
 def get_url(url):
     try:
+        if random.random() < .01:
+            print('sampled url[%s]' % url)
         return DB[url]
     except KeyError:
         r = requests.get(url)
