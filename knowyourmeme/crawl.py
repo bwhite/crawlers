@@ -23,7 +23,7 @@ def get_url(url):
             DB[url] = r.content
             return DB[url]
         else:
-            print('Url[%s] Gave Code[%d]' % (url2, r.status_code))
+            print('Url[%s] Gave Code[%d]' % (url, r.status_code))
             return r.content
 
 
