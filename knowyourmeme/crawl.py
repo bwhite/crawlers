@@ -27,6 +27,14 @@ def get_url(url):
             raise ValueError('Url[%s] Gave Code[%d]' % (url, r.status_code))
 
 
+def get_url_nocache(url):
+    r = requests.get(url)
+    if r.status_code == 200:
+        return r.content
+    else:
+        raise ValueError('Url[%s] Gave Code[%d]' % (url, r.status_code))
+
+
 def page_num(url):
     return int(PAGE_RE.search(url).groups()[0])
 
@@ -104,7 +112,18 @@ def get_meme_photo_images(photo_page_urls):
     return images
 
 
+def get_meme_photo_images_data(meme_photo_images):
+
+    def crawl_image_data(url):
+        get_url(url)
+    urls = sum(meme_photo_images.values(), [])
+    batch_crawl(crawl_image_data, urls)
+    return {}
+
+
 def try_pickle_run(fn, func):
+    if not fn:
+        return func()
     try:
         with open(fn) as fp:
             return pickle.load(fp)
@@ -118,7 +137,8 @@ def try_pickle_run(fn, func):
 def main():
     meme_urls = try_pickle_run('meme_urls.pkl', get_meme_urls)
     meme_photos = try_pickle_run('meme_photos.pkl', lambda : get_meme_photos(meme_urls))
-    try_pickle_run('meme_photo_images.pkl', lambda : get_meme_photo_images(meme_photos))
+    meme_photo_images = try_pickle_run('meme_photo_images.pkl', lambda : get_meme_photo_images(meme_photos))
+    try_pickle_run('', lambda : get_meme_photo_images_data(meme_photo_images))
     DB.sync()
     
 main()
