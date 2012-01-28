@@ -27,7 +27,6 @@ def get_meme_urls():
             return
         pq = PyQuery(content)
         meme_names.update(set(x.get('href') for x in pq('a[href^="/memes/"]')))
-
     urls = ['http://knowyourmeme.com/memes?page=%d' % x for x in range(num_pages)]
     batch_crawl(crawl, urls)
     return ['http://knowyourmeme.com%s' % x for x in meme_names]
@@ -46,15 +45,17 @@ def batch_crawl(crawl_func, urls):
 
 def get_meme_photos(meme_urls):
     meme_urls = list(meme_urls)
-    photos = {}  # [meme_url] = set of photo urls
+    photo_pages = {}  # [meme_url] = set of photo page urls
+    photos = {}  # Set of photo urls
 
     def crawl(url):
         content = requests.get(url).content
         print(url)
         pq = PyQuery(content)
-        photos[url] = set(x.get('href') for x in pq('a[href^="/photos/"]'))
+        photo_pages[url] = set(x.get('href') for x in pq('a[href^="/photos/"]'))
+        photos[url] = set(x.get('href') for x in pq('a[href*="kym-cdn.com"]'))
     batch_crawl(crawl, meme_urls)
-    return photos
+    return photos, photo_pages
 
 
 def try_pickle_run(fn, func):
@@ -72,3 +73,4 @@ def main():
     meme_urls = try_pickle_run('meme_urls.pkl', get_meme_urls)
     meme_photos = try_pickle_run('meme_photos.pkl', lambda : get_meme_photos(meme_urls))
     
+main()
