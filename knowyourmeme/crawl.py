@@ -16,8 +16,12 @@ def get_url(url):
     try:
         return DB[url]
     except KeyError:
-        DB[url] = requests.get(url).content
-        return DB[url]
+        r = requests.get(url)
+        if r.status_code == 200:
+            DB[url] = requests.get(url).content
+            return DB[url]
+        else:
+            return r.content
 
 
 def page_num(url):
