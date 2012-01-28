@@ -17,12 +17,13 @@ def get_url(url):
     try:
         return DB[url]
     except KeyError:
-        r = requests.get(urllib.unquote(url).decode('utf-8'))
+        url2 = urllib.unquote(url).decode('utf-8')
+        r = requests.get(url2)
         if r.status_code == 200:
             DB[url] = r.content
             return DB[url]
         else:
-            print('Url[%s] Gave Code[%d]' % (url, r.status_code))
+            print('Url[%s] Gave Code[%d]' % (url2, r.status_code))
             return r.content
 
 
