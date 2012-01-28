@@ -7,7 +7,6 @@ import re
 import cPickle as pickle
 from shove import Shove
 import os
-import urllib
 
 DB = Shove('sqlite:///%s' % (os.path.expanduser('~/crawl_cache.db')), compress=True)
 PAGE_RE = re.compile('.*\?page=([0-9]+)')
@@ -112,8 +111,7 @@ def try_pickle_run(fn, func):
 def main():
     meme_urls = try_pickle_run('meme_urls.pkl', get_meme_urls)
     meme_photos = try_pickle_run('meme_photos.pkl', lambda : get_meme_photos(meme_urls))
-    #meme_photos = dict(meme_photos.items()[:10])
-    #meme_photo_images = try_pickle_run('meme_photo_images.pkl', lambda : get_meme_photo_images(meme_photos))
+    try_pickle_run('meme_photo_images.pkl', lambda : get_meme_photo_images(meme_photos))
     DB.sync()
     
 main()
