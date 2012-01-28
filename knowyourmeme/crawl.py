@@ -64,14 +64,11 @@ def get_meme_photos(meme_urls):
         parent_url, url = urls
         content = requests.get(url).content
         pq = PyQuery(content)
-        photo_pages.setdefault(parent_url, set()).update(set('http://knowyourmeme.com' + x.get('href') for x in pq('a[href^="/photos/"]')))
+        photo_pages.setdefault(parent_url, set()).update(set('http://knowyourmeme.com' + x.get('href') for x in pq('a[class="photo cboxElement"]')))
 
     # This gets a list of all of the "photo pages"
     batch_crawl(crawl_index, [x + '/photos' for x in meme_urls])
-    photo_pages = photo_pages.items()
-    remove = photo_pages[0][1].intersection(photo_pages[1][1])
-    print('The following are being removed from photos[%s]' % str(remove))
-    return dict((x, y - remove) for x, y in photo_pages)
+    return photo_pages
 
 
 def get_meme_photo_images(photo_page_urls):
@@ -82,12 +79,7 @@ def get_meme_photo_images(photo_page_urls):
         content = requests.get(url).content
         pq = PyQuery(content)
         print(url)
-        try:
-            images.setdefault(parent_url, set()).add(pq('img[class="centered_photo"]')[0].get('src'))
-        except:
-            print('Problem[%s]' % url)
-            print(content)
-            raise
+        images.setdefault(parent_url, set()).add(pq('img[class="centered_photo"]')[0].get('src'))
 
     url_pairs = sum(([(x, z) for z in y] for x, y in photo_page_urls.items()), [])
     print('Starting photo image crawl')
@@ -109,6 +101,7 @@ def try_pickle_run(fn, func):
 def main():
     meme_urls = try_pickle_run('meme_urls.pkl', get_meme_urls)
     meme_photos = try_pickle_run('meme_photos.pkl', lambda : get_meme_photos(meme_urls))
+    meme_photos = dict(meme_photos.items()[:10])
     meme_photo_images = try_pickle_run('meme_photo_images.pkl', lambda : get_meme_photo_images(meme_photos))
     
 main()
