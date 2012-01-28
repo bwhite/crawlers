@@ -44,7 +44,7 @@ def batch_crawl(crawl_func, datas):
         g = gevent.Greenlet(crawl_func, data)
         gs.append(g)
         g.start()
-        g.sleep()
+        gevent.sleep()
 
     for x in gs:
         x.join()
