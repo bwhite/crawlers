@@ -44,6 +44,7 @@ def batch_crawl(crawl_func, datas):
         g = gevent.Greenlet(crawl_func, data)
         gs.append(g)
         g.start()
+        gevent.sleep()
 
     for x in gs:
         x.join()
@@ -79,7 +80,6 @@ def get_meme_photo_images(photo_page_urls):
 
     def crawl_photo_image(urls):
         parent_url, url = urls
-        print(url)
         content = requests.get(url).content
         pq = PyQuery(content)
         print(url)
