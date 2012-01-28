@@ -70,6 +70,7 @@ def get_meme_photos(meme_urls):
     batch_crawl(crawl_index, [x + '/photos' for x in meme_urls])
     photo_pages = photo_pages.items()
     remove = photo_pages[0][1].intersection(photo_pages[1][1])
+    print('The following are being removed from photos[%s]' % str(remove))
     return dict((x, y - remove) for x, y in photo_pages)
 
 
@@ -84,8 +85,6 @@ def get_meme_photo_images(photo_page_urls):
         images.setdefault(parent_url, set()).add(pq('img[class="centered_photo"]')[0].get('src'))
 
     url_pairs = sum([[(x, z) for z in y] for x, y in photo_page_urls.items()], [])
-    print(url_pairs)[:10]
-    return
     batch_crawl(crawl_photo_image, url_pairs)
     return images
 
