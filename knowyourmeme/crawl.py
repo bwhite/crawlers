@@ -38,10 +38,10 @@ def get_meme_urls():
     return ['http://knowyourmeme.com%s' % x for x in meme_names]
 
 
-def batch_crawl(crawl_func, urls):
+def batch_crawl(crawl_func, datas):
     gs = []
-    for url in urls:
-        g = gevent.Greenlet(crawl_func, url)
+    for data in datas:
+        g = gevent.Greenlet(crawl_func, data)
         gs.append(g)
         g.start()
 
@@ -59,12 +59,13 @@ def get_meme_photos(meme_urls):
         pq = PyQuery(content)
         print(url)
         num_pages = max([page_num(x.get('href')) for x in pq('a[href*="/photos?page="]')] + [1])
-        batch_crawl(crawl_photos, ['%s?page%d' % (url, x) for x in range(1, num_pages + 1)])
+        batch_crawl(crawl_photos, [(url, '%s?page%d' % (url, x)) for x in range(1, num_pages + 1)])
 
-    def crawl_photos(url):
+    def crawl_photos(urls):
+        parent_url, url = urls
         content = requests.get(url).content
         pq = PyQuery(content)
-        photo_pages[url] = set(x.get('href') for x in pq('a[href^="/photos/"]'))
+        photo_pages[parent_url] = set(x.get('href') for x in pq('a[href^="/photos/"]'))
         #photos[url] = set(x.get('href') for x in pq('a[href*="kym-cdn.com"]'))
     #batch_crawl(crawl, meme_urls)
     batch_crawl(crawl_index, [x + '/photos' for x in meme_urls])
