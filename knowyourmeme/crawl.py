@@ -75,7 +75,7 @@ def get_meme_photos(meme_urls):
         print(url)
         content = get_url(url)
         pq = PyQuery(content)
-        photo_pages.setdefault(parent_url, set()).update(set('http://knowyourmeme.com' + x.get('href') for x in pq('a[class="photo cboxElement"]')))
+        photo_pages.setdefault(parent_url, set()).update(set('http://knowyourmeme.com' + x.get('href') for x in pq('a[class^="photo"]')))
         print(len(photo_pages[parent_url]))
 
     # This gets a list of all of the "photo pages"
