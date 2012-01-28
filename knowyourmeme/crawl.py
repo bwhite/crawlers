@@ -45,7 +45,7 @@ def get_meme_urls():
         if content.find('Whoops! There are') > 0:
             return
         pq = PyQuery(content)
-        meme_names.update(set(x.get('href') for x in pq('a[href^="/memes/"]')))
+        meme_names.update(set(x.get('href').split('#')[0] for x in pq('a[href^="/memes/"]')))
     urls = ['http://knowyourmeme.com/memes?page=%d' % x for x in range(1, num_pages + 1)]
     batch_crawl(crawl, urls)
     return ['http://knowyourmeme.com%s' % x for x in meme_names]
