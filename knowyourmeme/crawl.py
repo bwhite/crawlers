@@ -72,6 +72,7 @@ def get_meme_photos(meme_urls):
 
     def crawl_photos(urls):
         parent_url, url = urls
+        print(url)
         content = get_url(url)
         pq = PyQuery(content)
         photo_pages.setdefault(parent_url, set()).update(set('http://knowyourmeme.com' + x.get('href') for x in pq('a[class="photo cboxElement"]')))
