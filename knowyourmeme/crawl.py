@@ -38,16 +38,15 @@ def get_meme_urls():
     return ['http://knowyourmeme.com%s' % x for x in meme_names]
 
 
-def batch_crawl(crawl_func, datas):
+def batch_crawl(crawl_func, datas, num_connections=20):
     gs = []
     for data in datas:
-        g = gevent.Greenlet(crawl_func, data)
+        g = gevent.spawn(crawl_func, data)
         gs.append(g)
-        g.start()
-        gevent.sleep()
-
-    for x in gs:
-        x.join()
+        if len(gs) >= num_connections:
+            gevent.joinall(gs)
+            gs = []
+    gevent.joinall(gs)
 
 
 def get_meme_photos(meme_urls):
