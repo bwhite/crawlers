@@ -7,6 +7,7 @@ import re
 import cPickle as pickle
 from shove import Shove
 import os
+import urllib
 
 DB = Shove('sqlite:///%s' % (os.path.expanduser('~/crawl_cache.db')), compress=True)
 PAGE_RE = re.compile('.*\?page=([0-9]+)')
@@ -18,7 +19,7 @@ def get_url(url):
     except KeyError:
         r = requests.get(url)
         if r.status_code == 200:
-            DB[url] = requests.get(url).content
+            DB[url] = requests.get(urllib.unquote(url)).content
             return DB[url]
         else:
             print('Url[%s] Gave Code[%d]' % (url, r.status_code))
