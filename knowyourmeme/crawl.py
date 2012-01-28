@@ -16,8 +16,7 @@ def get_num_pages():
     return max([int(a.search(x.get('href')).groups()[0]) for x in pq('a[href^="/memes?page="]')])
 
 
-def get_meme_names():
-    gs = []
+def get_meme_urls():
     num_pages = max(min(get_num_pages(), 1000), 57)
     meme_names = set()
 
@@ -29,32 +28,47 @@ def get_meme_names():
         pq = PyQuery(content)
         meme_names.update(set(x.get('href') for x in pq('a[href^="/memes/"]')))
 
-    for x in range(num_pages):
-        g = gevent.Greenlet(crawl, 'http://knowyourmeme.com/memes?page=%d' % x)
+    urls = ['http://knowyourmeme.com/memes?page=%d' % x for x in range(num_pages)]
+    batch_crawl(crawl, urls)
+    return ['http://knowyourmeme.com%s' % x for x in meme_names]
+
+
+def batch_crawl(crawl_func, urls):
+    gs = []
+    for url in urls:
+        g = gevent.Greenlet(crawl_func, url)
         gs.append(g)
         g.start()
 
     for x in gs:
         x.join()
-    return meme_names
 
 
-def get_meme_photos(meme_names):
-    meme_names = list(meme_names)
-    
-    # Find photo urls for memes
-pq = PyQuery(requests.get('http://knowyourmeme.com/memes/wikipedia-donation-banner-captions').content)
-sa = set(x.get('href') for x in pq('a[href^="/photos/"]'))
-pq = PyQuery(requests.get('http://knowyourmeme.com/memes/teenage-mutant-ninja-noses').content)
-sb = set(x.get('href') for x in pq('a[href^="/photos/"]'))
-print(sa.intersection(sb))
+def get_meme_photos(meme_urls):
+    meme_urls = list(meme_urls)
+    photos = {}  # [meme_url] = set of photo urls
+
+    def crawl(url):
+        content = requests.get(url).content
+        print(url)
+        pq = PyQuery(content)
+        photos[url] = set(x.get('href') for x in pq('a[href^="/photos/"]'))
+    batch_crawl(crawl, meme_urls)
+    return photos
+
+
+def try_pickle_run(fn, func):
+    try:
+        with open(fn) as fp:
+            return pickle.load(fp)
+    except IOError:
+        out = func()
+        with open(fn, 'w') as fp:
+            pickle.dump(out, fp, -1)
+        return out
+
 
 def main():
-    try:
-        with open('meme_names.pkl') as fp:
-            meme_names = pickle.load(fp)
-    except IOError:
-        meme_names = get_meme_names()
-        with open('meme_names.pkl', 'w') as fp:
-            meme_names = pickle.dump(meme_names, fp, -1)
-
+    meme_urls = try_pickle_run('meme_urls.pkl', get_meme_urls)
+    meme_photos = try_pickle_run('meme_photos.pkl', lambda : get_meme_photos(meme_urls))
+    
