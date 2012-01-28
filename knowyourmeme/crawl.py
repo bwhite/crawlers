@@ -17,7 +17,7 @@ def get_url(url):
     try:
         return DB[url]
     except KeyError:
-        r = requests.get(urllib.unquote(url))
+        r = requests.get(urllib.unquote(url).decode('utf-8'))
         if r.status_code == 200:
             DB[url] = r.content
             return DB[url]
