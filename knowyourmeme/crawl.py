@@ -21,8 +21,7 @@ def get_url(url):
             DB[url] = r.content
             return DB[url]
         else:
-            print('Url[%s] Gave Code[%d]' % (url, r.status_code))
-            return r.content
+            raise ValueError('Url[%s] Gave Code[%d]' % (url, r.status_code))
 
 
 def page_num(url):
