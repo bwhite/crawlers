@@ -7,13 +7,19 @@ import re
 import cPickle as pickle
 
 
+PAGE_RE = re.compile('.*\?page=([0-9]+)')
+
+
+def page_num(url):
+    return int(PAGE_RE.search(url).groups()[0])
+
+
 def get_num_pages():
     url = 'http://knowyourmeme.com/memes/'
     content = requests.get(url).content
     print(url)
     pq = PyQuery(content)
-    a = re.compile('/memes\?page=([0-9]+)')
-    return max([int(a.search(x.get('href')).groups()[0]) for x in pq('a[href^="/memes?page="]')])
+    return max([page_num(x.get('href')) for x in pq('a[href^="/memes?page="]')])
 
 
 def get_meme_urls():
@@ -27,7 +33,7 @@ def get_meme_urls():
             return
         pq = PyQuery(content)
         meme_names.update(set(x.get('href') for x in pq('a[href^="/memes/"]')))
-    urls = ['http://knowyourmeme.com/memes?page=%d' % x for x in range(num_pages)]
+    urls = ['http://knowyourmeme.com/memes?page=%d' % x for x in range(1, num_pages + 1)]
     batch_crawl(crawl, urls)
     return ['http://knowyourmeme.com%s' % x for x in meme_names]
 
@@ -48,14 +54,22 @@ def get_meme_photos(meme_urls):
     photo_pages = {}  # [meme_url] = set of photo page urls
     photos = {}  # Set of photo urls
 
-    def crawl(url):
+    def crawl_index(url):
         content = requests.get(url).content
+        pq = PyQuery(content)
         print(url)
+        num_pages = max(page_num(x.get('href')) for x in pq('a[href^="/memes/.*/photos\?page="]'))
+        batch_crawl(crawl_photos, ['%s?page%d' % x for x in range(1, num_pages + 1)])
+
+    def crawl_photos(url):
+        content = requests.get(url).content
         pq = PyQuery(content)
         photo_pages[url] = set(x.get('href') for x in pq('a[href^="/photos/"]'))
         #photos[url] = set(x.get('href') for x in pq('a[href*="kym-cdn.com"]'))
-    batch_crawl(crawl, meme_urls)
-    batch_crawl(crawl, [x + '/photos' for x in meme_urls])
+    #batch_crawl(crawl, meme_urls)
+    batch_crawl(crawl_index, [x + '/photos' for x in meme_urls])
+    #http://knowyourmeme.com/memes/x-x-everywhere/photos?page=3
+    
     return photos, photo_pages
 
 
