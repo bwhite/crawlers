@@ -32,7 +32,6 @@ def page_num(url):
 def get_num_pages():
     url = 'http://knowyourmeme.com/memes/'
     content = get_url(url)
-    print(url)
     pq = PyQuery(content)
     return max([page_num(x.get('href')) for x in pq('a[href^="/memes?page="]')])
 
@@ -43,7 +42,6 @@ def get_meme_urls():
 
     def crawl(url):
         content = get_url(url)
-        print(url)
         if content.find('Whoops! There are') > 0:
             return
         pq = PyQuery(content)
@@ -71,17 +69,14 @@ def get_meme_photos(meme_urls):
     def crawl_index(url):
         content = get_url(url)
         pq = PyQuery(content)
-        print(url)
         num_pages = max([page_num(x.get('href')) for x in pq('a[href*="/photos?page="]')] + [1])
         batch_crawl(crawl_photos, [(url, '%s?page=%d' % (url, x)) for x in range(1, num_pages + 1)])
 
     def crawl_photos(urls):
         parent_url, url = urls
-        print(url)
         content = get_url(url)
         pq = PyQuery(content)
         photo_pages.setdefault(parent_url, set()).update(set('http://knowyourmeme.com' + x.get('href') for x in pq('a[class^="photo"]')))
-        print(len(photo_pages[parent_url]))
 
     # This gets a list of all of the "photo pages"
     batch_crawl(crawl_index, [x + '/photos' for x in meme_urls])
@@ -95,11 +90,9 @@ def get_meme_photo_images(photo_page_urls):
         parent_url, url = urls
         content = get_url(url)
         pq = PyQuery(content)
-        print(url)
         images.setdefault(parent_url, set()).add(pq('img[class="centered_photo"]')[0].get('src'))
 
     url_pairs = sum(([(x, z) for z in y] for x, y in photo_page_urls.items()), [])
-    print('Starting photo image crawl')
     batch_crawl(crawl_photo_image, url_pairs)
     return images
 
