@@ -44,7 +44,7 @@ def batch_crawl(crawl_func, datas):
         g = gevent.Greenlet(crawl_func, data)
         gs.append(g)
         g.start()
-        g.join()
+        g.sleep()
 
     for x in gs:
         x.join()
@@ -87,6 +87,7 @@ def get_meme_photo_images(photo_page_urls):
             images.setdefault(parent_url, set()).add(pq('img[class="centered_photo"]')[0].get('src'))
         except:
             print('Problem[%s]' % url)
+            print(content)
             raise
 
     url_pairs = sum(([(x, z) for z in y] for x, y in photo_page_urls.items()), [])
