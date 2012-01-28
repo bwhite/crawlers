@@ -93,7 +93,7 @@ def get_meme_photo_images(photo_page_urls):
         try:
             images.setdefault(parent_url, set()).add(pq('img[class="centered_photo"]')[0].get('src'))
         except:
-            print('Problem Url[%s]' % url)
+            print('Problem Url[%s,%s]' % (parent_url, url))
             raise
 
     url_pairs = sum(([(x, z) for z in y] for x, y in photo_page_urls.items()), [])
