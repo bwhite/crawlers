@@ -15,6 +15,7 @@ def crawl():
                 run('python crawl.py')
                 get('meme_photos.pkl', 'meme_photos.pkl')
                 get('meme_urls.pkl', 'meme_urls.pkl')
+                get('meme_photo_images.pkl', 'meme_photo_images.pkl')
     finally:
         run('rm -fr %s' % working_dir)
             
