@@ -82,6 +82,8 @@ def get_meme_photo_images(photo_page_urls):
         images.setdefault(parent_url, set()).add(pq('img[class="centered_photo"]')[0].get('src'))
 
     url_pairs = sum([[(x, z) for z in y] for x, y in photo_page_urls.items()], [])
+    print(url_pairs)[:10]
+    return
     batch_crawl(crawl_photo_image, url_pairs)
     return images
 
