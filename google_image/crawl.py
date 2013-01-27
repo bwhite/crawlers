@@ -4,24 +4,40 @@ import json
 import glob
 import os
 import cPickle as pickle
+import hadoopy_hbase
 
 
-def get(api_key, query):
-    query = urllib.quote(query)
-    return json.loads(requests.get('https://www.googleapis.com/customsearch/v1?key=%s&cx=011323180791009162744:boa0ofeir5k&q=%s&searchType=image&imgType=clipart' % query, verify=False).content)
+#hs.store(image, class_name, source, query=query, snippet=snippet, url=url)
 
-db = pickle.load(open('entity_google.pkl'))
-ct = 0
-for x in sorted(glob.glob('../goodlogo/entity_images/*')):
-    x = os.path.basename(x)
-    if x in db:
-        continue
-    ct += 1
-    if ct >= 100:
-        break
-    #print(x)
-    l = get('%s logo' % x)
-    db[x] = l
-    print(l)
-    pickle.dump(db, open('entity_google.pkl', 'w'), -1)
-print(ct)
+
+
+def replay():
+    datas = pickle.load(open('results.pkl'))
+    hs = HBaseCrawlerStore()
+    import imfeat
+    for data in datas:
+        for x in data['result']['items']:
+            try:
+                r = requests.get(x['link'], timeout=10)
+                image = r.content
+                if r.status_code != 200:
+                    continue
+            except (requests.exceptions.TooManyRedirects, requests.exceptions.ConnectionError, requests.exceptions.Timeout):
+                continue
+            try:
+                imfeat.image_fromstring(image)
+            except IOError:
+                continue
+            query = data['query'].encode('utf-8')
+            class_name = data['query'].encode('utf-8')[:-5].lower()
+            source = 'google'
+            snippet = x['snippet'].encode('utf-8')
+            url = x['link'].encode('utf-8')
+            hs.store(image, class_name, source, query=query, snippet=snippet, url=url)
+            print(class_name)
+        #return
+
+#logos = []
+#queries = [x.rstrip() + ' logo' for x in open('top_brands_businessweek.txt') if x.rstrip().lower() != 'nike']
+#crawl('AIzaSyAkvR05pzUEDoRk6UpCnowdpYsyNxNcXKs', queries)  # ['nike logo']
+replay()
