@@ -16,8 +16,8 @@ import hashlib
 
 class HBaseCrawlerStore(object):
 
-    def __init__(self, row_prefix):
-        self.hb = hadoopy_hbase.connect()
+    def __init__(self, hb, row_prefix):
+        self.hb = hb
         self.table = 'images'
         self.row_prefix = row_prefix
         self.random_bytes = 10
@@ -51,7 +51,11 @@ def _crawl_wrap(crawler):
         query = query if query is not None else class_name
         results = crawler(query, *args, **kw)
         num_results = 0
+        prev_output = set()
         for result in results:
+            if result['url'] in prev_output:
+                continue
+            prev_output.add(result['url'])
             store.store(class_name=class_name, **result)
             num_results += 1
         return num_results
@@ -80,6 +84,7 @@ def _google_crawl(query, api_key):
 def _flickr_crawl(query, api_key, api_secret, min_upload_date=None, max_upload_date=None, page=None, has_geo=False):
     import flickrapi
     flickr = flickrapi.FlickrAPI(api_key, api_secret)
+    prev_output = set()
     try:
         kw = {}
         if min_upload_date is not None:
@@ -110,6 +115,9 @@ def _flickr_crawl(query, api_key, api_secret, min_upload_date=None, max_upload_d
             photo = dict(photo.items())
             print(photo)
             try:
+                if photo['url_m'] in prev_output:
+                    continue
+                prev_output.add(photo['url_m'])
                 print(photo['url_m'])
                 out = {'source': 'flickr', 'url': photo['url_m']}
             except KeyError:
