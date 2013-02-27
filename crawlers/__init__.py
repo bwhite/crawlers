@@ -81,7 +81,7 @@ def _google_crawl(query, api_key):
                'query': query.encode('utf-8')}
 
 
-def _flickr_crawl(query, api_key, api_secret, min_upload_date=None, max_upload_date=None, page=None, has_geo=False):
+def _flickr_crawl(query, api_key, api_secret, min_upload_date=None, max_upload_date=None, page=None, has_geo=False, lat=None, lon=None, radius=None):
     import flickrapi
     flickr = flickrapi.FlickrAPI(api_key, api_secret)
     prev_output = set()
@@ -95,6 +95,11 @@ def _flickr_crawl(query, api_key, api_secret, min_upload_date=None, max_upload_d
             kw['page'] = page
         if has_geo:
             kw['has_geo'] = 1
+        if lat is not None and lon is not None:
+            kw['lat'] = lat
+            kw['lon'] = lon
+            if radius is not None:
+                kw['radius'] = str(radius)
         extras = 'description,license,date_upload,date_taken,owner_name,icon_server,original_format,last_update,geo,tags,machine_tags,o_dims,views,media,path_alias,url_sq,url_t,url_s,url_q,url_m,url_n,url_z,url_c,url_l,url_o'
         print(query)
         res = flickr.photos_search(text=query,
