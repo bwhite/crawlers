@@ -1,3 +1,4 @@
+import gevent
 import requests
 import urllib
 import urllib2
@@ -45,6 +46,31 @@ def _verify_image(image_binary):
     return True
 
 
+def _batch_download(url_funcs, num_concurrent=50):
+    gs = []
+    outs = []
+
+    def _worker(url, func):
+        try:
+            r = requests.get(url, timeout=1)
+        except (requests.exceptions.TooManyRedirects, requests.exceptions.ConnectionError, requests.exceptions.Timeout):
+            return
+        if r.status_code != 200:
+            return
+        outs.append(func(url, r.content))
+
+    for url, func in url_funcs:
+        while len(gs) >= num_concurrent:
+            gs = [g for g in gs if g.successful() and g.join() is None]
+        gs.append(gevent.spawn(_worker, url=url, func=func, outs=outs))
+        for out in outs:
+            yield out
+        outs = []
+    gevent.joinall(gs)
+    for out in outs:
+        yield out
+
+
 def _crawl_wrap(crawler):
 
     def inner(store, class_name, query=None, *args, **kw):
@@ -52,7 +78,7 @@ def _crawl_wrap(crawler):
         results = crawler(query, *args, **kw)
         num_results = 0
         prev_output = set()
-        for result in results:
+        for result in _batch_download(results):
             if result['url'] in prev_output:
                 continue
             prev_output.add(result['url'])
@@ -137,18 +163,14 @@ def _flickr_crawl(query, api_key, api_secret, min_upload_date=None, max_upload_d
             for key in ['title', 'tags', 'latitude', 'longitude',
                         'accuracy', 'dateupload', 'datetaken']:
                 _get_data(key)
-            print(out)
-            try:
-                r = requests.get(out['url'], timeout=1)
-            except (requests.exceptions.TooManyRedirects, requests.exceptions.ConnectionError, requests.exceptions.Timeout):
-                continue
-            out['image'] = r.content
-            if r.status_code != 200:
-                continue
-            # Unavailable and other unrelated images are GIFs, skip them
-            if out['image'].startswith('GIF87'):
-                continue
-            yield out
+
+            def post_download(content):
+                out['image'] = content
+                # Unavailable and other unrelated images are GIFs, skip them
+                if out['image'].startswith('GIF87'):
+                    continue
+                return out
+            yield out['url'], post_download
 
 
 google_crawl = _crawl_wrap(_google_crawl)
