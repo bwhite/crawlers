@@ -35,6 +35,7 @@ class HBaseCrawlerStore(object):
         for x, y in kw.items():
             add_col('meta:' + x, y)
         row = self.row_prefix + os.urandom(self.random_bytes)
+        print('Storing %r' % row)
         self.hb.mutateRow(self.table, row, cols)
 
 
@@ -82,7 +83,9 @@ def _crawl_wrap(crawler):
         num_results = 0
         prev_output = set()
         for result in _batch_download(results):
+            print(result['url'])
             if result['url'] in prev_output:
+                print('Skipping, repeat')
                 continue
             prev_output.add(result['url'])
             store.store(class_name=class_name, query=query, **result)
@@ -113,7 +116,6 @@ def _google_crawl(query, api_key):
 def _flickr_crawl(query, api_key, api_secret, min_upload_date=None, max_upload_date=None, page=None, has_geo=False, lat=None, lon=None, radius=None):
     import flickrapi
     flickr = flickrapi.FlickrAPI(api_key, api_secret)
-    prev_output = set()
     try:
         kw = {}
         if min_upload_date is not None:
@@ -149,9 +151,6 @@ def _flickr_crawl(query, api_key, api_secret, min_upload_date=None, max_upload_d
             photo = dict(photo.items())
             print(photo)
             try:
-                if photo['url_m'] in prev_output:
-                    continue
-                prev_output.add(photo['url_m'])
                 print(photo['url_m'])
                 out = {'source': 'flickr', 'url': photo['url_m']}
             except KeyError:
@@ -167,13 +166,19 @@ def _flickr_crawl(query, api_key, api_secret, min_upload_date=None, max_upload_d
                         'accuracy', 'dateupload', 'datetaken']:
                 _get_data(key)
 
-            def post_download(content):
-                out['image'] = content
-                # Unavailable and other unrelated images are GIFs, skip them
-                if out['image'].startswith('GIF87'):
-                    raise ValueError
-                return out
-            yield out['url'], post_download
+            def inner(scope):
+
+                def post_download(content):
+                    out = scope['out']
+                    print('PD[%s]' % out['url'])
+                    out['image'] = content
+                    print('Got content[%d]' % len(content))
+                    # Unavailable and other unrelated images are GIFs, skip them
+                    if out['image'].startswith('GIF87'):
+                        print('Raising error')
+                        raise ValueError
+                    return out
+            yield out['url'], inner(dict(locals()))
 
 
 google_crawl = _crawl_wrap(_google_crawl)
