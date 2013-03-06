@@ -53,7 +53,7 @@ def _batch_download(url_funcs, num_concurrent=50):
 
     def _worker(url, func):
         try:
-            r = requests.get(url, timeout=1)
+            r = requests.get(url, timeout=3)
         except (requests.exceptions.TooManyRedirects, requests.exceptions.ConnectionError, requests.exceptions.Timeout):
             return
         if r.status_code != 200:
@@ -64,6 +64,7 @@ def _batch_download(url_funcs, num_concurrent=50):
         print(url)
         while len(gs) >= num_concurrent:
             gs = [g for g in gs if g.successful() and g.join() is None]
+            gevent.sleep(.01)
         gs.append(gevent.spawn(_worker, url=url, func=func))
         for out in outs:
             yield out
