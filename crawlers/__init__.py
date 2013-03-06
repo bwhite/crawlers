@@ -29,6 +29,7 @@ class HBaseCrawlerStore(object):
         add_col = lambda x, y: cols.append(hadoopy_hbase.Mutation(column=x, value=y))
         add_col('data:image', image)
         add_col('meta:class', class_name)
+        add_col('meta:query', query)
         add_col('meta:source', source)
         add_col('hash:md5', md5(image))
         for x, y in kw.items():
