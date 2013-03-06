@@ -23,7 +23,7 @@ class HBaseCrawlerStore(object):
         self.row_prefix = row_prefix
         self.random_bytes = 10
 
-    def store(self, image, class_name, source, **kw):
+    def store(self, image, class_name, source, query, **kw):
         cols = []
         md5 = lambda x: hashlib.md5(x).digest()
         add_col = lambda x, y: cols.append(hadoopy_hbase.Mutation(column=x, value=y))
@@ -57,12 +57,13 @@ def _batch_download(url_funcs, num_concurrent=50):
             return
         if r.status_code != 200:
             return
-        outs.append(func(url, r.content))
+        outs.append(func(r.content))
 
     for url, func in url_funcs:
+        print(url)
         while len(gs) >= num_concurrent:
             gs = [g for g in gs if g.successful() and g.join() is None]
-        gs.append(gevent.spawn(_worker, url=url, func=func, outs=outs))
+        gs.append(gevent.spawn(_worker, url=url, func=func))
         for out in outs:
             yield out
         outs = []
@@ -82,7 +83,7 @@ def _crawl_wrap(crawler):
             if result['url'] in prev_output:
                 continue
             prev_output.add(result['url'])
-            store.store(class_name=class_name, **result)
+            store.store(class_name=class_name, query=query, **result)
             num_results += 1
         return num_results
     return inner
@@ -168,7 +169,7 @@ def _flickr_crawl(query, api_key, api_secret, min_upload_date=None, max_upload_d
                 out['image'] = content
                 # Unavailable and other unrelated images are GIFs, skip them
                 if out['image'].startswith('GIF87'):
-                    continue
+                    raise ValueError
                 return out
             yield out['url'], post_download
 
