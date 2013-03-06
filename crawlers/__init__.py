@@ -178,6 +178,7 @@ def _flickr_crawl(query, api_key, api_secret, min_upload_date=None, max_upload_d
                         print('Raising error')
                         raise ValueError
                     return out
+                return post_download
             yield out['url'], inner(dict(locals()))
 
 
