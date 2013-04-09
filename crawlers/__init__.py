@@ -21,21 +21,21 @@ class HBaseCrawlerStore(object):
         self.hb = hb
         self.table = 'images'
         self.row_prefix = row_prefix
-        self.random_bytes = 10
 
     def store(self, image, class_name, source, query, **kw):
         cols = []
         md5 = lambda x: hashlib.md5(x).digest()
+        cur_md5 = md5(image)
         add_col = lambda x, y: cols.append(hadoopy_hbase.Mutation(column=x, value=y))
         add_col('data:image', image)
-        add_col('meta:class', class_name)
+        if class_name is not None:
+            add_col('meta:class', class_name)
         add_col('meta:query', query)
         add_col('meta:source', source)
-        add_col('hash:md5', md5(image))
+        add_col('hash:md5', cur_md5)
         for x, y in kw.items():
             add_col('meta:' + x, y)
-        row = self.row_prefix + os.urandom(self.random_bytes)
-        print('Storing %r' % row)
+        row = self.row_prefix + cur_md5
         self.hb.mutateRow(self.table, row, cols)
 
 
@@ -62,7 +62,6 @@ def _batch_download(url_funcs, num_concurrent=50):
         outs.append(func(r.content))
 
     for url, func in url_funcs:
-        print(url)
         while len(gs) >= num_concurrent:
             gs = [g for g in gs if g.successful() and g.join() is None]
             gevent.sleep(.01)
@@ -77,15 +76,14 @@ def _batch_download(url_funcs, num_concurrent=50):
 
 def _crawl_wrap(crawler):
 
-    def inner(store, class_name, query=None, *args, **kw):
-        query = query if query is not None else class_name
+    def inner(store, query, class_name=None, *args, **kw):
         results = crawler(query, *args, **kw)
         num_results = 0
         prev_output = set()
         for result in _batch_download(results):
-            print(result['url'])
+            #print('Result[%s]' % result['url'])
             if result['url'] in prev_output:
-                print('Skipping, repeat')
+                #print('Skipping, repeat')
                 continue
             prev_output.add(result['url'])
             store.store(class_name=class_name, query=query, **result)
@@ -113,7 +111,8 @@ def _google_crawl(query, api_key):
                'query': query.encode('utf-8')}
 
 
-def _flickr_crawl(query, api_key, api_secret, min_upload_date=None, max_upload_date=None, page=None, has_geo=False, lat=None, lon=None, radius=None):
+def _flickr_crawl(query, api_key, api_secret, max_rows=500, min_upload_date=None, max_upload_date=None, page=None, has_geo=False, lat=None, lon=None, radius=None):
+    max_rows = max(1, min(max_rows, 500))
     import flickrapi
     flickr = flickrapi.FlickrAPI(api_key, api_secret)
     try:
@@ -135,7 +134,7 @@ def _flickr_crawl(query, api_key, api_secret, min_upload_date=None, max_upload_d
         print(query)
         res = flickr.photos_search(text=query,
                                    extras=extras,
-                                   per_page=500,
+                                   per_page=max_rows,
                                    **kw)
     except (httplib.BadStatusLine,
             flickrapi.exceptions.FlickrError,
@@ -149,9 +148,7 @@ def _flickr_crawl(query, api_key, api_secret, min_upload_date=None, max_upload_d
     else:
         for photo in res.find('photos'):
             photo = dict(photo.items())
-            print(photo)
             try:
-                print(photo['url_m'])
                 out = {'source': 'flickr', 'url': photo['url_m']}
             except KeyError:
                 continue
@@ -161,7 +158,6 @@ def _flickr_crawl(query, api_key, api_secret, min_upload_date=None, max_upload_d
                     out[key] = photo[key].encode('utf-8')
                 except KeyError:
                     pass
-            print(photo)
             for key in ['title', 'tags', 'latitude', 'longitude',
                         'accuracy', 'dateupload', 'datetaken']:
                 _get_data(key)
@@ -170,12 +166,9 @@ def _flickr_crawl(query, api_key, api_secret, min_upload_date=None, max_upload_d
 
                 def post_download(content):
                     out = scope['out']
-                    print('PD[%s]' % out['url'])
                     out['image'] = content
-                    print('Got content[%d]' % len(content))
                     # Unavailable and other unrelated images are GIFs, skip them
                     if out['image'].startswith('GIF87'):
-                        print('Raising error')
                         raise ValueError
                     return out
                 return post_download
