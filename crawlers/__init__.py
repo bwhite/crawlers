@@ -111,7 +111,7 @@ def _google_crawl(query, api_key):
                'query': query.encode('utf-8')}
 
 
-def _flickr_crawl(query, api_key, api_secret, max_rows=500, min_upload_date=None, max_upload_date=None, page=None, has_geo=False, lat=None, lon=None, radius=None):
+def _flickr_crawl(query, api_key, api_secret, max_rows=500, min_upload_date=None, max_upload_date=None, page=None, has_geo=False, lat=None, lon=None, radius=None, one_per_owner=True):
     max_rows = max(1, min(max_rows, 500))
     import flickrapi
     flickr = flickrapi.FlickrAPI(api_key, api_secret)
@@ -146,6 +146,7 @@ def _flickr_crawl(query, api_key, api_secret, max_rows=500, min_upload_date=None
         print(e)
         return
     else:
+        owners = set()
         for photo in res.find('photos'):
             photo = dict(photo.items())
             try:
@@ -159,8 +160,11 @@ def _flickr_crawl(query, api_key, api_secret, max_rows=500, min_upload_date=None
                 except KeyError:
                     pass
             for key in ['title', 'tags', 'latitude', 'longitude',
-                        'accuracy', 'dateupload', 'datetaken']:
+                        'accuracy', 'dateupload', 'datetaken', 'owner_name']:
                 _get_data(key)
+            if one_per_owner and out['owner_name'] in owners:
+                continue
+            owners.add(out['owner_name'])
 
             def inner(scope):
 
