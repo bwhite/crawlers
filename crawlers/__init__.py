@@ -161,11 +161,11 @@ def _flickr_crawl(query, api_key, api_secret, max_rows=500, min_upload_date=None
                     pass
             print(photo)
             for key in ['title', 'tags', 'latitude', 'longitude',
-                        'accuracy', 'dateupload', 'datetaken', 'owner_name']:
+                        'accuracy', 'dateupload', 'datetaken', 'owner']:
                 _get_data(key)
-            if one_per_owner and out['owner_name'] in owners:
+            if one_per_owner and out['owner'] in owners:
                 continue
-            owners.add(out['owner_name'])
+            owners.add(out['owner'])
 
             def inner(scope):
 
