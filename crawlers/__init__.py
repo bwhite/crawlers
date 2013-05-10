@@ -159,6 +159,7 @@ def _flickr_crawl(query, api_key, api_secret, max_rows=500, min_upload_date=None
                     out[key] = photo[key].encode('utf-8')
                 except KeyError:
                     pass
+            print(photo)
             for key in ['title', 'tags', 'latitude', 'longitude',
                         'accuracy', 'dateupload', 'datetaken', 'owner_name']:
                 _get_data(key)
