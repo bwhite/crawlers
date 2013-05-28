@@ -4,39 +4,8 @@ import urllib
 import urllib2
 import httplib
 import json
-import glob
-import os
-import cPickle as pickle
-import hadoopy_hbase
 import xml.parsers.expat
 import xml.etree.ElementTree
-import os
-import sys
-import hashlib
-
-
-class HBaseCrawlerStore(object):
-
-    def __init__(self, hb, row_prefix):
-        self.hb = hb
-        self.table = 'images'
-        self.row_prefix = row_prefix
-
-    def store(self, image, class_name, source, query, **kw):
-        cols = []
-        md5 = lambda x: hashlib.md5(x).digest()
-        cur_md5 = md5(image)
-        add_col = lambda x, y: cols.append(hadoopy_hbase.Mutation(column=x, value=y))
-        add_col('data:image', image)
-        if class_name is not None:
-            add_col('meta:class', class_name)
-        add_col('meta:query', query)
-        add_col('meta:source', source)
-        add_col('hash:md5', cur_md5)
-        for x, y in kw.items():
-            add_col('meta:' + x, y)
-        row = self.row_prefix + cur_md5
-        self.hb.mutateRow(self.table, row, cols)
 
 
 def _verify_image(image_binary):
@@ -86,7 +55,7 @@ def _crawl_wrap(crawler):
                 #print('Skipping, repeat')
                 continue
             prev_output.add(result['url'])
-            store.store(class_name=class_name, query=query, **result)
+            store(class_name=class_name, query=query, **result)
             num_results += 1
         return num_results
     return inner
