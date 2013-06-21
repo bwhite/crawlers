@@ -38,7 +38,9 @@ def _batch_download(url_funcs, num_concurrent=50):
         for out in outs:
             yield out
         outs = []
+    print('Pre join')
     gevent.joinall(gs)
+    print('Post join')
     for out in outs:
         yield out
 
