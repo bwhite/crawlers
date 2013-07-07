@@ -80,7 +80,7 @@ def _google_crawl(query, api_key):
                'query': query.encode('utf-8')}
 
 
-def _flickr_crawl(api_key, api_secret, query=None, max_rows=500, min_upload_date=None, max_upload_date=None, page=None, has_geo=False, lat=None, lon=None, radius=None, one_per_owner=True):
+def _flickr_crawl(api_key, api_secret, query=None, max_rows=500, min_upload_date=None, max_upload_date=None, page=None, has_geo=False, lat=None, lon=None, radius=None, one_per_owner=True, **kw):
     max_rows = max(1, min(max_rows, 500))
     import flickrapi
     flickr = flickrapi.FlickrAPI(api_key, api_secret)
