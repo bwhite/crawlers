@@ -47,17 +47,15 @@ def _batch_download(url_funcs, num_concurrent=50):
 
 def _crawl_wrap(crawler):
 
-    def inner(store, query, class_name=None, *args, **kw):
-        results = crawler(query, *args, **kw)
+    def inner(store, **kw):
+        results = crawler(**kw)
         num_results = 0
         prev_output = set()
         for result in _batch_download(results):
-            #print('Result[%s]' % result['url'])
             if result['url'] in prev_output:
-                #print('Skipping, repeat')
                 continue
             prev_output.add(result['url'])
-            store(class_name=class_name, query=query, **result)
+            store(kw, **result)
             num_results += 1
         return num_results
     return inner
@@ -82,12 +80,14 @@ def _google_crawl(query, api_key):
                'query': query.encode('utf-8')}
 
 
-def _flickr_crawl(query, api_key, api_secret, max_rows=500, min_upload_date=None, max_upload_date=None, page=None, has_geo=False, lat=None, lon=None, radius=None, one_per_owner=True):
+def _flickr_crawl(api_key, api_secret, query=None, max_rows=500, min_upload_date=None, max_upload_date=None, page=None, has_geo=False, lat=None, lon=None, radius=None, one_per_owner=True):
     max_rows = max(1, min(max_rows, 500))
     import flickrapi
     flickr = flickrapi.FlickrAPI(api_key, api_secret)
     try:
         kw = {}
+        if query is not None:
+            kw['text'] = query
         if min_upload_date is not None:
             kw['min_upload_date'] = min_upload_date
         if max_upload_date is not None:
@@ -102,10 +102,8 @@ def _flickr_crawl(query, api_key, api_secret, max_rows=500, min_upload_date=None
             if radius is not None:
                 kw['radius'] = str(radius)
         extras = 'description,license,date_upload,date_taken,owner_name,icon_server,original_format,last_update,geo,tags,machine_tags,o_dims,views,media,path_alias,url_sq,url_t,url_s,url_q,url_m,url_n,url_z,url_c,url_l,url_o'
-        print(query)
         print('Presearch')
-        res = flickr.photos_search(text=query,
-                                   extras=extras,
+        res = flickr.photos_search(extras=extras,
                                    per_page=max_rows,
                                    **kw)
         print('Postsearch')
