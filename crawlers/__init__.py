@@ -80,7 +80,8 @@ def _google_crawl(query, api_key):
                'query': query.encode('utf-8')}
 
 
-def _flickr_crawl(api_key, api_secret, query=None, max_rows=500, min_upload_date=None, max_upload_date=None, page=None, has_geo=False, lat=None, lon=None, radius=None, one_per_owner=True, **kw):
+def _flickr_crawl(api_key, api_secret, query=None, max_rows=500, min_upload_date=None, max_upload_date=None, page=None, has_geo=False, lat=None, lon=None, radius=None, one_per_owner=True, size='m', **kw):
+    assert size in ('sq', 't', 's', 'q', 'm', 'n', 'z', 'c', 'l', 'o')
     max_rows = max(1, min(max_rows, 500))
     import flickrapi
     flickr = flickrapi.FlickrAPI(api_key, api_secret)
@@ -121,7 +122,7 @@ def _flickr_crawl(api_key, api_secret, query=None, max_rows=500, min_upload_date
         for photo in res.find('photos'):
             photo = dict(photo.items())
             try:
-                out = {'source': 'flickr', 'url': photo['url_m']}
+                out = {'source': 'flickr', 'url': photo['url_' + size]}
             except KeyError:
                 continue
 
