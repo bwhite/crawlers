@@ -82,7 +82,7 @@ def _google_crawl(query, api_key):
                                                      'image': y}
 
 
-def _street_view_crawl(lat, lon, api_key, incr=.0004, grid_radius=2, heading_delta=30, pitch=10, fov=60):
+def _street_view_crawl(lat, lon, api_key, incr=.0002, grid_radius=2, heading_delta=30, pitch=10, fov=60):
     def inner(scope):
         def inner(content):
             # Crude way to filter "The specified location could not be found." message
