@@ -72,9 +72,11 @@ def _google_crawl(query, api_key):
             continue
         if not _verify_image(image):
             continue
-        yield x['link'].encode('utf-8'), {'source': 'google',
-                                          'snippet': x['snippet'].encode('utf-8'),
-                                          'query': query.encode('utf-8')}
+        yield  x['link'].encode('utf-8'), lambda y: {'source': 'google',
+                                                     'snippet': x['snippet'].encode('utf-8'),
+                                                     'query': query.encode('utf-8'),
+                                                     'url': x['link'].encode('utf-8'),
+                                                     'image': y}
 
 
 def _street_view_crawl(lat, lon, api_key, incr=.0004, grid_radius=2, heading_delta=30, pitch=10, fov=60):
@@ -89,8 +91,8 @@ def _street_view_crawl(lat, lon, api_key, incr=.0004, grid_radius=2, heading_del
                                                                                                                                                          fov,
                                                                                                                                                          pitch,
                                                                                                                                                          api_key)
-                yield url, {'source': 'street_view', 'latitude': str(clat), 'longitude': str(clon),
-                            'heading': str(heading), 'pitch': str(pitch), 'fov': str(fov)}
+                yield url, lambda x: {'source': 'streetview', 'latitude': str(clat), 'longitude': str(clon),
+                                      'heading': str(heading), 'pitch': str(pitch), 'fov': str(fov), 'url': url, 'image': x}
 
 
 def _flickr_crawl(api_key, api_secret, query=None, max_rows=500, min_upload_date=None, max_upload_date=None, page=None, has_geo=False, lat=None, lon=None, radius=None, one_per_owner=True, size='m', **kw):
