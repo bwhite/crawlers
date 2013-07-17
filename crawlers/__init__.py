@@ -87,8 +87,8 @@ def _street_view_crawl(lat, lon, api_key, incr=.0004, grid_radius=2, heading_del
                 clon = lon + lon_shift * incr
                 url = 'http://maps.googleapis.com/maps/api/streetview?size=640x640&location=%f,%%20%f&fov=%f&heading=%f&pitch=%f&sensor=false&key=%s' % (clat,
                                                                                                                                                          clon,
-                                                                                                                                                         heading,
                                                                                                                                                          fov,
+                                                                                                                                                         heading,
                                                                                                                                                          pitch,
                                                                                                                                                          api_key)
                 yield url, lambda x: {'source': 'streetview', 'latitude': str(clat), 'longitude': str(clon),
