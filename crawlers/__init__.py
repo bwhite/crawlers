@@ -80,6 +80,13 @@ def _google_crawl(query, api_key):
 
 
 def _street_view_crawl(lat, lon, api_key, incr=.0004, grid_radius=2, heading_delta=30, pitch=10, fov=60):
+    def inner(scope):
+        def inner(content):
+            # Crude way to filter "The specified location could not be found." message
+            if len(content) < 10000:
+                raise ValueError
+            scope['image'] = content
+            return scope
     for lat_shift in range(-grid_radius, grid_radius + 1):
         for lon_shift in range(-grid_radius, grid_radius + 1):
             for heading in range(0, 360, heading_delta):
@@ -92,13 +99,8 @@ def _street_view_crawl(lat, lon, api_key, incr=.0004, grid_radius=2, heading_del
                                                                                                                                                          pitch,
                                                                                                                                                          api_key)
 
-                def inner(content):
-                    # Crude way to filter "The specified location could not be found." message
-                    if len(content) < 10000:
-                        raise ValueError
-                    return {'source': 'streetview', 'latitude': str(clat), 'longitude': str(clon),
-                            'heading': str(heading), 'pitch': str(pitch), 'fov': str(fov), 'url': url, 'image': content}
-                yield url, inner
+                yield url, inner({'source': 'streetview', 'latitude': str(clat), 'longitude': str(clon),
+                                  'heading': str(heading), 'pitch': str(pitch), 'fov': str(fov), 'url': url})
 
 
 def _flickr_crawl(api_key, api_secret, query=None, max_rows=500, min_upload_date=None, max_upload_date=None, page=None, has_geo=False, lat=None, lon=None, radius=None, one_per_owner=True, size='m', **kw):
