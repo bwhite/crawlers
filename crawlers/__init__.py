@@ -38,9 +38,7 @@ def _batch_download(url_funcs, num_concurrent=50):
         for out in outs:
             yield out
         outs = []
-    print('Pre join')
     gevent.joinall(gs)
-    print('Post join')
     for out in outs:
         yield out
 
@@ -80,6 +78,22 @@ def _google_crawl(query, api_key):
                'query': query.encode('utf-8')}
 
 
+def _street_view_crawl(lat, lon, api_key, incr=.0004, grid_radius=2, heading_delta=30, pitch=10, fov=60):
+    for lat_shift in range(-grid_radius, grid_radius + 1):
+        for lon_shift in range(-grid_radius, grid_radius + 1):
+            for heading in range(0, 360, heading_delta):
+                clat = lat + lat_shift * incr
+                clon = lon + lon_shift * incr
+                url = 'http://maps.googleapis.com/maps/api/streetview?size=640x640&location=%f,%%20%f&fov=%f&heading=%f&pitch=%f&sensor=false&key=%s' % (clat,
+                                                                                                                                                         clon,
+                                                                                                                                                         heading,
+                                                                                                                                                         fov,
+                                                                                                                                                         pitch,
+                                                                                                                                                         api_key)
+                yield {'source': 'street_view', 'url': url, 'latitude': str(clat), 'longitude': str(clon),
+                       'heading': str(heading), 'pitch': str(pitch), 'fov': str(fov)}
+
+
 def _flickr_crawl(api_key, api_secret, query=None, max_rows=500, min_upload_date=None, max_upload_date=None, page=None, has_geo=False, lat=None, lon=None, radius=None, one_per_owner=True, size='m', **kw):
     assert size in ('sq', 't', 's', 'q', 'm', 'n', 'z', 'c', 'l', 'o')
     max_rows = max(1, min(max_rows, 500))
@@ -103,11 +117,9 @@ def _flickr_crawl(api_key, api_secret, query=None, max_rows=500, min_upload_date
             if radius is not None:
                 kw['radius'] = str(radius)
         extras = 'description,license,date_upload,date_taken,owner_name,icon_server,original_format,last_update,geo,tags,machine_tags,o_dims,views,media,path_alias,url_sq,url_t,url_s,url_q,url_m,url_n,url_z,url_c,url_l,url_o'
-        print('Presearch')
         res = flickr.photos_search(extras=extras,
                                    per_page=max_rows,
                                    **kw)
-        print('Postsearch')
     except (httplib.BadStatusLine,
             flickrapi.exceptions.FlickrError,
             xml.parsers.expat.ExpatError,
@@ -152,4 +164,5 @@ def _flickr_crawl(api_key, api_secret, query=None, max_rows=500, min_upload_date
 
 
 google_crawl = _crawl_wrap(_google_crawl)
+street_view_crawl = _crawl_wrap(_street_view_crawl)
 flickr_crawl = _crawl_wrap(_flickr_crawl)
