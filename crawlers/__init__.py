@@ -28,7 +28,10 @@ def _batch_download(url_funcs, num_concurrent=50):
             return
         if r.status_code != 200:
             return
-        outs.append(func(r.content))
+        try:
+            outs.append(func(r.content))
+        except ValueError:
+            return
 
     for url, func in url_funcs:
         while len(gs) >= num_concurrent:
@@ -87,6 +90,7 @@ def _street_view_crawl(lat, lon, api_key, incr=.0004, grid_radius=2, heading_del
                 raise ValueError
             scope['image'] = content
             return scope
+        return inner
     for lat_shift in range(-grid_radius, grid_radius + 1):
         for lon_shift in range(-grid_radius, grid_radius + 1):
             for heading in range(0, 360, heading_delta):
