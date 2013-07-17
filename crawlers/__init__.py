@@ -91,8 +91,14 @@ def _street_view_crawl(lat, lon, api_key, incr=.0004, grid_radius=2, heading_del
                                                                                                                                                          heading,
                                                                                                                                                          pitch,
                                                                                                                                                          api_key)
-                yield url, lambda x: {'source': 'streetview', 'latitude': str(clat), 'longitude': str(clon),
-                                      'heading': str(heading), 'pitch': str(pitch), 'fov': str(fov), 'url': url, 'image': x}
+
+                def inner(content):
+                    # Crude way to filter "The specified location could not be found." message
+                    if len(content) < 10000:
+                        raise ValueError
+                    return {'source': 'streetview', 'latitude': str(clat), 'longitude': str(clon),
+                            'heading': str(heading), 'pitch': str(pitch), 'fov': str(fov), 'url': url, 'image': content}
+                yield url, inner
 
 
 def _flickr_crawl(api_key, api_secret, query=None, max_rows=500, min_upload_date=None, max_upload_date=None, page=None, has_geo=False, lat=None, lon=None, radius=None, one_per_owner=True, size='m', **kw):
